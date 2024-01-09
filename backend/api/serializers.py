@@ -2,7 +2,8 @@ from djoser.serializers import (UserSerializer, UserCreateSerializer,
                                 SetPasswordSerializer)
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from recipes.models import Tag, Ingredient
+from recipes.models import (Tag, Ingredient, RecipeIngredient,
+                            Recipe, Favorite, ShoppingCart)
 
 User = get_user_model()
 
@@ -56,3 +57,44 @@ class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = ('id', 'name', 'measurement_unit')
+
+
+class RecipeIngredientSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(source='ingredient.id')
+    name = serializers.ReadOnlyField(source='ingredient.name')
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit')
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'name', 'measurement_unit', 'amount')
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+    """GET"""
+    tags = TagSerializer(many=True, read_only=True)
+    author = UserSerializer(read_only=True)
+    ingredients = RecipeIngredientSerializer(source='recipes',
+                                             many=True, read_only=True)
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'tags', 'author', 'ingredients',
+                  'is_favorited', 'is_in_shopping_cart',
+                  'name', 'image', 'text', 'cooking_time')
+
+    def get_is_favorited(self, obj):
+        request = self.context.get('request')
+        if request.user.is_authenticated:
+            return Favorite.objects.filter(
+                user=request.user, recipe=obj).exists()
+        return False
+
+    def get_is_in_shopping_cart(self, obj):
+        request = self.context.get('request')
+        if request.user.is_authenticated:
+            return ShoppingCart.objects.filter(
+                user=request.user, recipe=obj).exists()
+        return False

@@ -5,11 +5,13 @@ from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from .serializers import (UserSerializer, UserCreateSerializer,
                           UserSetPasswordSerializer,
-                          TagSerializer, IngredientSerializer)
+                          TagSerializer, IngredientSerializer,
+                          RecipeSerializer)
 from .paginations import CustomLimitPaginator
 from rest_framework import viewsets
-from recipes.models import Tag, Ingredient
+from recipes.models import Tag, Ingredient, Recipe
 from django_filters.rest_framework import DjangoFilterBackend
+from .filters import RecipeFilter
 
 User = get_user_model()
 
@@ -44,5 +46,15 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
+    # Посмотреть потом на фронте поиск по первой букве
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('name',)
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = CustomLimitPaginator
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = RecipeFilter

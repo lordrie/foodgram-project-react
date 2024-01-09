@@ -60,8 +60,7 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
-    """Игредиенты определенного рецепта.
-    Промежуточная таблица, связывает Ingredient и Recipe."""
+    """Игредиенты определенного рецепта и количество"""
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
                                related_name='recipes')
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE,
