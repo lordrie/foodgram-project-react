@@ -1,10 +1,15 @@
 from django.contrib.auth import get_user_model
 from djoser.views import UserViewSet
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from .serializers import (UserSerializer, UserCreateSerializer,
-                          UserSetPasswordSerializer)
+                          UserSetPasswordSerializer,
+                          TagSerializer, IngredientSerializer)
 from .paginations import CustomLimitPaginator
+from rest_framework import viewsets
+from recipes.models import Tag, Ingredient
+from django_filters.rest_framework import DjangoFilterBackend
 
 User = get_user_model()
 
@@ -26,3 +31,18 @@ class UserViewSet(UserViewSet):
         elif self.action == 'set_password':
             return UserSetPasswordSerializer
         return UserSerializer
+
+
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = None
+
+
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    pagination_class = None
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('name',)
