@@ -1,10 +1,13 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.core.validators import RegexValidator
 
 
 class User(AbstractUser):
     """Кастомная модель пользователя."""
-    username = models.CharField('Username', max_length=149, unique=True)
+    username = models.CharField(
+        'Username', max_length=150, unique=True,
+        validators=[RegexValidator(regex=r'^[\w.@+-]+\Z')])
     first_name = models.CharField('Имя', max_length=150)
     last_name = models.CharField('Фамилия', max_length=150)
     email = models.EmailField('email', max_length=254, unique=True)

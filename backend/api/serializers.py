@@ -1,0 +1,41 @@
+from djoser.serializers import (UserSerializer, UserCreateSerializer,
+                                SetPasswordSerializer)
+from rest_framework import serializers
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class UserSerializer(UserSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username',
+                  'first_name', 'last_name', 'is_subscribed')
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        return obj.follower.filter(id=request.user.id).exists()
+
+
+class UserCreateSerializer(UserCreateSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'username', 'first_name',
+                  'last_name', 'password')
+
+
+class UserSetPasswordSerializer(SetPasswordSerializer):
+    current_password = serializers.CharField(required=True,
+                                             label='Текущий пароль')
+    new_password = serializers.CharField(required=True,
+                                         label='Новый пароль')
+
+    def validate(self, data):
+        request = self.context['request'].user
+        current_password = data.get('current_password')
+        if not request.check_password(current_password):
+            raise serializers.ValidationError(
+                {'old_password': 'Введите другой пароль'})
+        return data
