@@ -4,6 +4,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from recipes.models import (Tag, Ingredient, RecipeIngredient,
                             Recipe, Favorite, ShoppingCart)
+from drf_extra_fields.fields import Base64ImageField
 
 User = get_user_model()
 
@@ -98,3 +99,30 @@ class RecipeSerializer(serializers.ModelSerializer):
             return ShoppingCart.objects.filter(
                 user=request.user, recipe=obj).exists()
         return False
+
+
+class RecipeCreateSerializer(serializers.ModelSerializer):
+    ingredients = RecipeIngredientSerializer(source='recipes', many=True)
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Tag.objects.all())
+    image = Base64ImageField()
+
+    class Meta:
+        model = Recipe
+        fields = ('ingredients', 'tags', 'image',
+                  'name', 'text', 'cooking_time')
+
+    def create(self, validated_data):
+        ingredients_data = validated_data.pop('recipes')
+        tags_data = validated_data.pop('tags')
+        validated_data['author'] = self.context['request'].user
+        recipe = Recipe.objects.create(**validated_data)
+        for ingredient_data in ingredients_data:
+            if 'id' in ingredient_data:
+                ingredient = Ingredient.objects.get(id=ingredient_data['id'])
+                RecipeIngredient.objects.create(
+                    recipe=recipe, ingredient=ingredient,
+                    amount=ingredient_data['amount'])
+        for tag_data in tags_data:
+            recipe.tags.add(tag_data)
+        return recipe
