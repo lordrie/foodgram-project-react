@@ -124,12 +124,34 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('recipes')
+        if not ingredients_data:
+            raise serializers.ValidationError(
+                "Рецепт должен содержать хотя бы один ингредиент.")
+        if any(ingredients_data.count(ingredient) > 1
+               for ingredient in ingredients_data):
+            raise serializers.ValidationError(
+                "Рецепт не должен содержать повторяющиеся ингредиенты.")
+
         tags_data = validated_data.pop('tags')
+        if not tags_data:
+            raise serializers.ValidationError(
+                "Рецепт должен содержать хотя бы один тег.")
+        if len(tags_data) != len(set(tags_data)):
+            raise serializers.ValidationError(
+                "Рецепт не должен содержать повторяющиеся теги.")
+
+        image_data = validated_data.get('image')
+        if not image_data:
+            raise serializers.ValidationError(
+                "Рецепт должен содержать изображение.")
+
+        cooking_time = validated_data.get('cooking_time')
+        if not cooking_time:
+            raise serializers.ValidationError(
+                "Рецепт должен содержать время приготовления.")
+
         validated_data['author'] = self.context['request'].user
         recipe = Recipe.objects.create(**validated_data)
-        if 'image' not in validated_data or validated_data['image'] is None:
-            raise serializers.ValidationError(
-                {'image': 'Изображение обязательно для рецепта'})
         for ingredient_data in ingredients_data:
             RecipeIngredient.objects.create(
                 recipe=recipe, **ingredient_data)
