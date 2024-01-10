@@ -12,6 +12,7 @@ from rest_framework import viewsets
 from recipes.models import Tag, Ingredient, Recipe
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import RecipeFilter
+from .permissions import IsAuthorOrReadOnly
 
 User = get_user_model()
 
@@ -54,7 +55,8 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAuthorOrReadOnly)
     pagination_class = CustomLimitPaginator
     filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
