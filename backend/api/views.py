@@ -6,7 +6,8 @@ from rest_framework.permissions import (IsAuthenticated,
 from .serializers import (UserSerializer, UserCreateSerializer,
                           UserSetPasswordSerializer,
                           TagSerializer, IngredientSerializer,
-                          RecipeSerializer, RecipeCreateSerializer)
+                          RecipeSerializer, RecipeCreateSerializer,
+                          RecipeUpdateSerializer)
 from .paginations import CustomLimitPaginator
 from rest_framework import viewsets
 from recipes.models import Tag, Ingredient, Recipe
@@ -62,6 +63,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
-        if self.action in ['create', 'partial_update']:
+        if self.action == 'create':
             return RecipeCreateSerializer
+        elif self.action in ['partial_update']:
+            return RecipeUpdateSerializer
         return RecipeSerializer

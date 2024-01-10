@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from recipes.models import (Tag, Ingredient, RecipeIngredient,
                             Recipe, Favorite, ShoppingCart)
 from drf_extra_fields.fields import Base64ImageField
+from .validators import validate_recipe_data
 
 User = get_user_model()
 
@@ -122,38 +123,8 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         fields = ('ingredients', 'tags', 'image',
                   'name', 'text', 'cooking_time')
 
-    def validate_recipe_data(self, validated_data):
-        ingredients_data = validated_data.pop('recipes', [])
-        if not ingredients_data:
-            raise serializers.ValidationError(
-                "Рецепт должен содержать хотя бы один ингредиент.")
-        if any(ingredients_data.count(ingredient) > 1
-               for ingredient in ingredients_data):
-            raise serializers.ValidationError(
-                "Рецепт не должен содержать повторяющиеся ингредиенты.")
-
-        tags_data = validated_data.pop('tags', [])
-        if not tags_data:
-            raise serializers.ValidationError(
-                "Рецепт должен содержать хотя бы один тег.")
-        if len(tags_data) != len(set(tags_data)):
-            raise serializers.ValidationError(
-                "Рецепт не должен содержать повторяющиеся теги.")
-
-        image_data = validated_data.get('image')
-        if not image_data or image_data == "":
-            raise serializers.ValidationError("Загрузите изображение.")
-
-        cooking_time = validated_data.get('cooking_time')
-        if not cooking_time:
-            raise serializers.ValidationError(
-                "Рецепт должен содержать время приготовления.")
-
-        return ingredients_data, tags_data
-
     def create(self, validated_data):
-        ingredients_data, tags_data = self.validate_recipe_data(validated_data)
-
+        ingredients_data, tags_data = validate_recipe_data(validated_data)
         validated_data['author'] = self.context['request'].user
         recipe = Recipe.objects.create(**validated_data)
         for ingredient_data in ingredients_data:
@@ -162,9 +133,24 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             recipe.tags.add(tag_data)
         return recipe
 
-    def update(self, instance, validated_data):
-        ingredients_data, tags_data = self.validate_recipe_data(validated_data)
+    def to_representation(self, instance):
+        serializer = RecipeSerializer(instance, context=self.context)
+        return serializer.data
 
+
+class RecipeUpdateSerializer(serializers.ModelSerializer):
+    ingredients = CreateIngredientsSerializer(source='recipes', many=True)
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Tag.objects.all())
+    image = Base64ImageField(required=True)
+
+    class Meta:
+        model = Recipe
+        fields = ('ingredients', 'tags', 'image',
+                  'name', 'text', 'cooking_time')
+
+    def update(self, instance, validated_data):
+        ingredients_data, tags_data = validate_recipe_data(validated_data)
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
         instance.cooking_time = validated_data.get(
