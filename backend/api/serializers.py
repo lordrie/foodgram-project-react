@@ -79,6 +79,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                                              many=True, read_only=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
+    image = Base64ImageField(required=True)
 
     class Meta:
         model = Recipe
@@ -114,7 +115,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredients = CreateIngredientsSerializer(source='recipes', many=True)
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all())
-    image = Base64ImageField()
+    image = Base64ImageField(required=True)
 
     class Meta:
         model = Recipe
@@ -126,12 +127,32 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         tags_data = validated_data.pop('tags')
         validated_data['author'] = self.context['request'].user
         recipe = Recipe.objects.create(**validated_data)
+        if 'image' not in validated_data or validated_data['image'] is None:
+            raise serializers.ValidationError(
+                {'image': 'Изображение обязательно для рецепта'})
         for ingredient_data in ingredients_data:
             RecipeIngredient.objects.create(
                 recipe=recipe, **ingredient_data)
         for tag_data in tags_data:
             recipe.tags.add(tag_data)
         return recipe
+
+    def update(self, instance, validated_data):
+        ingredients_data = validated_data.pop('recipes')
+        tags_data = validated_data.pop('tags')
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
+        instance.cooking_time = validated_data.get(
+            'cooking_time', instance.cooking_time)
+        instance.image = validated_data.get('image', instance.image)
+        instance.save()
+        instance.recipes.all().delete()
+        for ingredient_data in ingredients_data:
+            RecipeIngredient.objects.create(recipe=instance, **ingredient_data)
+        instance.tags.clear()
+        for tag_data in tags_data:
+            instance.tags.add(tag_data)
+        return instance
 
     def to_representation(self, instance):
         serializer = RecipeSerializer(instance, context=self.context)
