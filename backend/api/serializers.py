@@ -159,21 +159,51 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             recipe.tags.add(tag_data)
         return recipe
 
+    def validate(self, data):
+        image = data.get('image')
+        if not image:
+            raise serializers.ValidationError(
+                {"image": "Загрузите изображение."})
+        return data
+
     def update(self, instance, validated_data):
-        ingredients_data = validated_data.pop('recipes')
-        tags_data = validated_data.pop('tags')
+        print(validated_data)
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
         instance.cooking_time = validated_data.get(
             'cooking_time', instance.cooking_time)
-        instance.image = validated_data.get('image', instance.image)
-        instance.save()
+
+        image_data = validated_data.get('image')
+        if not image_data or image_data == "":
+            raise serializers.ValidationError({"Загрузите изображение"})
+        instance.image = image_data
+
+        ingredients_data = validated_data.pop('recipes', [])
+        if not ingredients_data:
+            raise serializers.ValidationError(
+                {"Рецепт должен содержать хотя бы один ингредиент."})
+        if any(ingredients_data.count(ingredient) > 1
+               for ingredient in ingredients_data):
+            raise serializers.ValidationError(
+                {"Рецепт не должен содержать повторяющиеся ингредиенты."})
+
+        tags_data = validated_data.pop('tags', [])
+        if not tags_data:
+            raise serializers.ValidationError(
+                {"Рецепт должен содержать хотя бы один тег."})
+        if len(tags_data) != len(set(tags_data)):
+            raise serializers.ValidationError(
+                {"Рецепт не должен содержать повторяющиеся теги."})
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
         instance.recipes.all().delete()
         for ingredient_data in ingredients_data:
             RecipeIngredient.objects.create(recipe=instance, **ingredient_data)
         instance.tags.clear()
         for tag_data in tags_data:
             instance.tags.add(tag_data)
+        instance.save()
         return instance
 
     def to_representation(self, instance):
