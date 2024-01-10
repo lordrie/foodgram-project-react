@@ -122,8 +122,8 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         fields = ('ingredients', 'tags', 'image',
                   'name', 'text', 'cooking_time')
 
-    def create(self, validated_data):
-        ingredients_data = validated_data.pop('recipes')
+    def validate_recipe_data(self, validated_data):
+        ingredients_data = validated_data.pop('recipes', [])
         if not ingredients_data:
             raise serializers.ValidationError(
                 "Рецепт должен содержать хотя бы один ингредиент.")
@@ -132,7 +132,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Рецепт не должен содержать повторяющиеся ингредиенты.")
 
-        tags_data = validated_data.pop('tags')
+        tags_data = validated_data.pop('tags', [])
         if not tags_data:
             raise serializers.ValidationError(
                 "Рецепт должен содержать хотя бы один тег.")
@@ -141,57 +141,39 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 "Рецепт не должен содержать повторяющиеся теги.")
 
         image_data = validated_data.get('image')
-        if not image_data:
-            raise serializers.ValidationError(
-                "Рецепт должен содержать изображение.")
+        if not image_data or image_data == "":
+            raise serializers.ValidationError("Загрузите изображение.")
 
         cooking_time = validated_data.get('cooking_time')
         if not cooking_time:
             raise serializers.ValidationError(
                 "Рецепт должен содержать время приготовления.")
 
+        return ingredients_data, tags_data
+
+    def create(self, validated_data):
+        ingredients_data, tags_data = self.validate_recipe_data(validated_data)
+
         validated_data['author'] = self.context['request'].user
         recipe = Recipe.objects.create(**validated_data)
         for ingredient_data in ingredients_data:
-            RecipeIngredient.objects.create(
-                recipe=recipe, **ingredient_data)
+            RecipeIngredient.objects.create(recipe=recipe, **ingredient_data)
         for tag_data in tags_data:
             recipe.tags.add(tag_data)
         return recipe
 
     def update(self, instance, validated_data):
-        print(validated_data)
+        ingredients_data, tags_data = self.validate_recipe_data(validated_data)
+
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
         instance.cooking_time = validated_data.get(
             'cooking_time', instance.cooking_time)
-
-        image_data = validated_data.get('image')
-        if not image_data or image_data == "":
-            raise serializers.ValidationError({"Загрузите изображение"})
-        instance.image = image_data
-
-        ingredients_data = validated_data.pop('recipes', [])
-        if not ingredients_data:
-            raise serializers.ValidationError(
-                {"Рецепт должен содержать хотя бы один ингредиент."})
-        if any(ingredients_data.count(ingredient) > 1
-               for ingredient in ingredients_data):
-            raise serializers.ValidationError(
-                {"Рецепт не должен содержать повторяющиеся ингредиенты."})
-
-        tags_data = validated_data.pop('tags', [])
-        if not tags_data:
-            raise serializers.ValidationError(
-                {"Рецепт должен содержать хотя бы один тег."})
-        if len(tags_data) != len(set(tags_data)):
-            raise serializers.ValidationError(
-                {"Рецепт не должен содержать повторяющиеся теги."})
+        instance.image = validated_data.get('image')
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.recipes.all().delete()
-
         for ingredient_data in ingredients_data:
             RecipeIngredient.objects.create(recipe=instance, **ingredient_data)
         instance.tags.clear()
