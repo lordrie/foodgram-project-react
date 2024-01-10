@@ -159,13 +159,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             recipe.tags.add(tag_data)
         return recipe
 
-    def validate(self, data):
-        image = data.get('image')
-        if not image:
-            raise serializers.ValidationError(
-                {"image": "Загрузите изображение."})
-        return data
-
     def update(self, instance, validated_data):
         print(validated_data)
         instance.name = validated_data.get('name', instance.name)
@@ -198,6 +191,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.recipes.all().delete()
+
         for ingredient_data in ingredients_data:
             RecipeIngredient.objects.create(recipe=instance, **ingredient_data)
         instance.tags.clear()
