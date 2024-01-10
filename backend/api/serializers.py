@@ -101,8 +101,17 @@ class RecipeSerializer(serializers.ModelSerializer):
         return False
 
 
+class CreateIngredientsSerializer(serializers.ModelSerializer):
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all(), source='ingredient')
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'amount')
+
+
 class RecipeCreateSerializer(serializers.ModelSerializer):
-    ingredients = RecipeIngredientSerializer(source='recipes', many=True)
+    ingredients = CreateIngredientsSerializer(source='recipes', many=True)
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all())
     image = Base64ImageField()
@@ -118,11 +127,12 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         validated_data['author'] = self.context['request'].user
         recipe = Recipe.objects.create(**validated_data)
         for ingredient_data in ingredients_data:
-            if 'id' in ingredient_data:
-                ingredient = Ingredient.objects.get(id=ingredient_data['id'])
-                RecipeIngredient.objects.create(
-                    recipe=recipe, ingredient=ingredient,
-                    amount=ingredient_data['amount'])
+            RecipeIngredient.objects.create(
+                recipe=recipe, **ingredient_data)
         for tag_data in tags_data:
             recipe.tags.add(tag_data)
         return recipe
+
+    def to_representation(self, instance):
+        serializer = RecipeSerializer(instance, context=self.context)
+        return serializer.data
