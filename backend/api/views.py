@@ -7,13 +7,17 @@ from .serializers import (UserSerializer, UserCreateSerializer,
                           UserSetPasswordSerializer,
                           TagSerializer, IngredientSerializer,
                           RecipeSerializer, RecipeCreateSerializer,
-                          RecipeUpdateSerializer)
+                          RecipeUpdateSerializer, SubscriptionSerializer)
 from .paginations import CustomLimitPaginator
-from rest_framework import viewsets
+from rest_framework import viewsets, status, generics
 from recipes.models import Tag, Ingredient, Recipe
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import RecipeFilter
 from .permissions import IsAuthorOrReadOnly
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
+from users.models import Subscription
 
 User = get_user_model()
 
@@ -35,6 +39,48 @@ class UserViewSet(UserViewSet):
         elif self.action == 'set_password':
             return UserSetPasswordSerializer
         return UserSerializer
+
+
+class SubscriptionViewSet(generics.GenericAPIView, viewsets.ViewSet):
+    permission_classes = (IsAuthenticated,)
+    pagination_class = CustomLimitPaginator
+
+    def list(self, request):
+        user = request.user
+        queryset = user.follower.select_related('author').all()
+        pages = self.paginate_queryset(queryset)
+        serializer = SubscriptionSerializer(
+            pages, many=True, context={'request': request})
+        return self.get_paginated_response(serializer.data)
+
+
+class SubscribeViewSet(viewsets.ViewSet):
+    permission_classes = (IsAuthenticated,)
+
+    def create(self, request, user_id=None):
+        user = request.user
+        author = get_object_or_404(User, id=user_id)
+        if user == author:
+            return Response('Нельзя подписаться на себя',
+                            status=status.HTTP_400_BAD_REQUEST)
+        subscription = Subscription.objects.filter(author=author, user=user)
+        if subscription.exists():
+            return Response('Нельзя подписаться дважды',
+                            status=status.HTTP_400_BAD_REQUEST)
+        queryset = Subscription.objects.create(author=author, user=user)
+        serializer = SubscriptionSerializer(
+            queryset, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, user_id=None):
+        user = request.user
+        author = get_object_or_404(User, id=user_id)
+        subscription = Subscription.objects.filter(author=author, user=user)
+        if not subscription.exists():
+            return Response('Нельзя отписаться повторно',
+                            status=status.HTTP_400_BAD_REQUEST)
+        subscription.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
