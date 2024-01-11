@@ -42,8 +42,7 @@ class UserSetPasswordSerializer(SetPasswordSerializer):
         current_password = data.get('current_password')
         new_password = data.get('new_password')
         if not request.check_password(current_password):
-            raise serializers.ValidationError(
-                'Не верный пароль')
+            raise serializers.ValidationError('Неверный пароль')
         if request.check_password(new_password):
             raise serializers.ValidationError(
                 'Новый пароль не должен совпадать с текущим')
@@ -89,19 +88,18 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'is_favorited', 'is_in_shopping_cart',
                   'name', 'image', 'text', 'cooking_time')
 
-    def get_is_favorited(self, obj):
+    def get_is_model(self, model, obj):
         request = self.context.get('request')
         if request.user.is_authenticated:
-            return Favorite.objects.filter(
+            return model.objects.filter(
                 user=request.user, recipe=obj).exists()
         return False
 
+    def get_is_favorited(self, obj):
+        return self.get_is_model(Favorite, obj)
+
     def get_is_in_shopping_cart(self, obj):
-        request = self.context.get('request')
-        if request.user.is_authenticated:
-            return ShoppingCart.objects.filter(
-                user=request.user, recipe=obj).exists()
-        return False
+        return self.get_is_model(ShoppingCart, obj)
 
 
 class CreateIngredientsSerializer(serializers.ModelSerializer):
