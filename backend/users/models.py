@@ -15,6 +15,7 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        ordering = ('id',)
 
     def __str__(self):
         return f'{self.username}, {self.email}'
@@ -32,6 +33,7 @@ class Subscription(models.Model):
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+        ordering = ('id',)
         constraints = [models.UniqueConstraint(
             fields=('user', 'author'), name='unique_followers')]
 

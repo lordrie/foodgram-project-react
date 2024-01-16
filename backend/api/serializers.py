@@ -7,6 +7,7 @@ from recipes.models import (Tag, Ingredient, RecipeIngredient,
 from drf_extra_fields.fields import Base64ImageField
 from .validators import validate_recipe_data
 from users.models import Subscription
+from django.shortcuts import get_object_or_404
 
 User = get_user_model()
 
@@ -172,7 +173,7 @@ class RecipeUpdateSerializer(serializers.ModelSerializer):
         return serializer.data
 
 
-class SubscriptionRecipeSerializer(serializers.ModelSerializer):
+class SmallRecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
 
     class Meta:
@@ -207,4 +208,34 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         recipes = obj.author.recipes.all()
         if limit:
             recipes = recipes[:int(limit)]
-        return SubscriptionRecipeSerializer(recipes, many=True).data
+        return SmallRecipeSerializer(recipes, many=True).data
+
+
+class BaseRecipeSerializer(serializers.ModelSerializer):
+    def validate(self, data):
+        user = data['user']
+        recipe = data['recipe']
+        if self.Meta.model.objects.filter(user=user, recipe=recipe).exists():
+            raise serializers.ValidationError('Повторно нельзя добавить')
+        recipe = get_object_or_404(
+            Recipe.objects.select_related('author'), pk=recipe.id)
+        return data
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        return SmallRecipeSerializer(
+            instance.recipe, context={'request': request}).data
+
+
+class FavoriteSerializer(BaseRecipeSerializer):
+    """Сериализатор для работы с избранными рецептами."""
+    class Meta:
+        model = Favorite
+        fields = ('user', 'recipe')
+
+
+class ShoppingCartSerializer(BaseRecipeSerializer):
+    """Сериализатор для работы со списком покупок."""
+    class Meta:
+        model = ShoppingCart
+        fields = ('user', 'recipe')

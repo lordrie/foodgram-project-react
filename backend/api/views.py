@@ -7,10 +7,11 @@ from .serializers import (UserSerializer, UserCreateSerializer,
                           UserSetPasswordSerializer,
                           TagSerializer, IngredientSerializer,
                           RecipeSerializer, RecipeCreateSerializer,
-                          RecipeUpdateSerializer, SubscriptionSerializer)
+                          RecipeUpdateSerializer, SubscriptionSerializer,
+                          FavoriteSerializer, ShoppingCartSerializer)
 from .paginations import CustomLimitPaginator
 from rest_framework import viewsets, status, generics
-from recipes.models import Tag, Ingredient, Recipe
+from recipes.models import Tag, Ingredient, Recipe, Favorite, ShoppingCart
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import RecipeFilter
 from .permissions import IsAuthorOrReadOnly
@@ -18,6 +19,8 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from users.models import Subscription
+from rest_framework import viewsets
+from .mixins import RecipeMixin
 
 User = get_user_model()
 
@@ -56,6 +59,7 @@ class SubscriptionViewSet(generics.GenericAPIView, viewsets.ViewSet):
 
 class SubscribeViewSet(viewsets.ViewSet):
     permission_classes = (IsAuthenticated,)
+    http_method_names = ['get', 'post', 'delete', 'head']
 
     def create(self, request, user_id=None):
         user = request.user
@@ -72,14 +76,16 @@ class SubscribeViewSet(viewsets.ViewSet):
             queryset, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def destroy(self, request, user_id=None):
-        user = request.user
-        author = get_object_or_404(User, id=user_id)
-        subscription = Subscription.objects.filter(author=author, user=user)
-        if not subscription.exists():
-            return Response('Нельзя отписаться повторно',
+    @action(methods=('delete',), detail=True)
+    def delete(self, request, user_id):
+        """Удаление подписки."""
+        get_object_or_404(User, id=user_id)
+        if not Subscription.objects.filter(
+                user=request.user, author_id=user_id).exists():
+            return Response('Вы не были подписаны на автора',
                             status=status.HTTP_400_BAD_REQUEST)
-        subscription.delete()
+        get_object_or_404(Subscription, user=request.user,
+                          author_id=user_id).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -99,7 +105,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_fields = ('name',)
 
 
-class RecipeViewSet(viewsets.ModelViewSet):
+class RecipeViewSet(viewsets.ModelViewSet, RecipeMixin):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
@@ -111,6 +117,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create':
             return RecipeCreateSerializer
-        elif self.action in ['partial_update']:
+        elif self.action == 'partial_update':
             return RecipeUpdateSerializer
         return RecipeSerializer
+
+    @action(detail=True, methods=('POST', 'DELETE'))
+    def favorite(self, request, pk):
+        if request.method == 'POST':
+            return RecipeMixin.add(FavoriteSerializer, request.user, pk)
+        if request.method == 'DELETE':
+            return RecipeMixin.delete(Favorite, request.user, pk)
+
+    @action(detail=True, methods=('POST', 'DELETE'))
+    def shopping_cart(self, request, pk):
+        if request.method == 'POST':
+            return RecipeMixin.add(ShoppingCartSerializer, request.user, pk)
+        if request.method == 'DELETE':
+            return RecipeMixin.delete(ShoppingCart, request.user, pk)
