@@ -1,26 +1,26 @@
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
+from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
-from .serializers import (UserSerializer, UserCreateSerializer,
-                          UserSetPasswordSerializer,
-                          TagSerializer, IngredientSerializer,
-                          RecipeSerializer, RecipeCreateSerializer,
-                          RecipeUpdateSerializer, SubscriptionSerializer,
-                          FavoriteSerializer, ShoppingCartSerializer)
-from .paginations import CustomLimitPaginator
-from rest_framework import viewsets, status, generics
-from recipes.models import Tag, Ingredient, Recipe, Favorite, ShoppingCart
-from django_filters.rest_framework import DjangoFilterBackend
-from .filters import RecipeFilter
-from .permissions import IsAuthorOrReadOnly
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
-from rest_framework.response import Response
+
+from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from users.models import Subscription
-from rest_framework import viewsets
+
+from .filters import RecipeFilter
 from .mixins import RecipeMixin
+from .paginations import CustomLimitPaginator
+from .permissions import IsAuthorOrReadOnly
+from .serializers import (FavoriteSerializer, IngredientSerializer,
+                          RecipeCreateSerializer, RecipeSerializer,
+                          RecipeUpdateSerializer, ShoppingCartSerializer,
+                          SubscriptionSerializer, TagSerializer,
+                          UserCreateSerializer, UserSerializer,
+                          UserSetPasswordSerializer)
 
 User = get_user_model()
 
