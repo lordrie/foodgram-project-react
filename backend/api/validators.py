@@ -1,31 +1,44 @@
-from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+from users.models import Subscription
 
 
 def validate_recipe_data(validated_data):
     ingredients_data = validated_data.pop('recipes', [])
     if not ingredients_data:
-        raise serializers.ValidationError(
+        raise ValidationError(
             "Рецепт должен содержать хотя бы один ингредиент.")
     if any(ingredients_data.count(ingredient) > 1
             for ingredient in ingredients_data):
-        raise serializers.ValidationError(
+        raise ValidationError(
             "Рецепт не должен содержать повторяющиеся ингредиенты.")
 
     tags_data = validated_data.pop('tags', [])
     if not tags_data:
-        raise serializers.ValidationError(
+        raise ValidationError(
             "Рецепт должен содержать хотя бы один тег.")
     if len(tags_data) != len(set(tags_data)):
-        raise serializers.ValidationError(
+        raise ValidationError(
             "Рецепт не должен содержать повторяющиеся теги.")
 
     image_data = validated_data.get('image')
     if not image_data or image_data == "":
-        raise serializers.ValidationError("Загрузите изображение.")
+        raise ValidationError("Загрузите изображение.")
 
     cooking_time = validated_data.get('cooking_time')
     if not cooking_time:
-        raise serializers.ValidationError(
+        raise ValidationError(
             "Рецепт должен содержать время приготовления.")
-
     return ingredients_data, tags_data
+
+
+def validate_subscription(user, author):
+    if user == author:
+        raise ValidationError('Нельзя подписаться на себя')
+    if Subscription.objects.filter(author=author, user=user).exists():
+        raise ValidationError('Нельзя подписаться дважды')
+
+
+def validate_unsubscription(user, author):
+    if not Subscription.objects.filter(user=user,
+                                       author=author).exists():
+        raise ValidationError('Вы не были подписаны на автора')

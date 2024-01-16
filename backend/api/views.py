@@ -20,6 +20,7 @@ from .serializers import (FavoriteSerializer, IngredientSerializer,
                           SubscriptionSerializer, TagSerializer,
                           UserCreateSerializer, UserSerializer,
                           UserSetPasswordSerializer)
+from .validators import validate_subscription, validate_unsubscription
 
 User = get_user_model()
 
@@ -63,13 +64,7 @@ class SubscribeViewSet(viewsets.ViewSet):
     def create(self, request, user_id=None):
         user = request.user
         author = get_object_or_404(User, id=user_id)
-        if user == author:
-            return Response('Нельзя подписаться на себя',
-                            status=status.HTTP_400_BAD_REQUEST)
-        subscription = Subscription.objects.filter(author=author, user=user)
-        if subscription.exists():
-            return Response('Нельзя подписаться дважды',
-                            status=status.HTTP_400_BAD_REQUEST)
+        validate_subscription(user, author)
         queryset = Subscription.objects.create(author=author, user=user)
         serializer = SubscriptionSerializer(
             queryset, context={'request': request})
@@ -79,10 +74,7 @@ class SubscribeViewSet(viewsets.ViewSet):
     def delete(self, request, user_id):
         """Удаление подписки."""
         get_object_or_404(User, id=user_id)
-        if not Subscription.objects.filter(
-                user=request.user, author_id=user_id).exists():
-            return Response('Вы не были подписаны на автора',
-                            status=status.HTTP_400_BAD_REQUEST)
+        validate_unsubscription(request.user, user_id)
         get_object_or_404(Subscription, user=request.user,
                           author_id=user_id).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
