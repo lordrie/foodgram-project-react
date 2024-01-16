@@ -33,7 +33,7 @@ class UserCreateSerializer(UserCreateSerializer):
                   'last_name', 'password')
 
 
-class UserSetPasswordSerializer(SetPasswordSerializer):
+class UserСhangePasswordSerializer(SetPasswordSerializer):
     current_password = serializers.CharField(required=True,
                                              label='Текущий пароль')
     new_password = serializers.CharField(required=True,

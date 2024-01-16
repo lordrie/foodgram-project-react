@@ -34,11 +34,10 @@ def validate_recipe_data(validated_data):
 def validate_subscription(user, author):
     if user == author:
         raise ValidationError('Нельзя подписаться на себя')
-    if Subscription.objects.filter(author=author, user=user).exists():
+    if Subscription.objects.filter(user=user, author=author).exists():
         raise ValidationError('Нельзя подписаться дважды')
 
 
 def validate_unsubscription(user, author):
-    if not Subscription.objects.filter(user=user,
-                                       author=author).exists():
+    if not Subscription.objects.filter(user=user, author=author).exists():
         raise ValidationError('Вы не были подписаны на автора')

@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from users.models import Subscription
 
 from .filters import IngredientFilter, RecipeFilter
-from .mixins import RecipeMixin
+from .services import RecipeService
 from .paginations import CustomLimitPaginator
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (FavoriteSerializer, IngredientSerializer,
@@ -19,7 +19,7 @@ from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeUpdateSerializer, ShoppingCartSerializer,
                           SubscriptionSerializer, TagSerializer,
                           UserCreateSerializer, UserSerializer,
-                          UserSetPasswordSerializer)
+                          UserСhangePasswordSerializer)
 from .validators import validate_subscription, validate_unsubscription
 
 User = get_user_model()
@@ -40,7 +40,7 @@ class UserViewSet(UserViewSet):
         if self.action == 'create':
             return UserCreateSerializer
         elif self.action == 'set_password':
-            return UserSetPasswordSerializer
+            return UserСhangePasswordSerializer
         return UserSerializer
 
 
@@ -70,7 +70,7 @@ class SubscribeViewSet(viewsets.ViewSet):
             queryset, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(methods=('delete',), detail=True)
+    @action(methods=('DELETE',), detail=True)
     def delete(self, request, user_id):
         """Удаление подписки."""
         get_object_or_404(User, id=user_id)
@@ -94,7 +94,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_class = IngredientFilter
 
 
-class RecipeViewSet(viewsets.ModelViewSet, RecipeMixin):
+class RecipeViewSet(viewsets.ModelViewSet, RecipeService):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
@@ -113,13 +113,13 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeMixin):
     @action(detail=True, methods=('POST', 'DELETE'))
     def favorite(self, request, pk):
         if request.method == 'POST':
-            return RecipeMixin.add(FavoriteSerializer, request.user, pk)
+            return RecipeService.add(FavoriteSerializer, request.user, pk)
         if request.method == 'DELETE':
-            return RecipeMixin.delete(Favorite, request.user, pk)
+            return RecipeService.delete(Favorite, request.user, pk)
 
     @action(detail=True, methods=('POST', 'DELETE'))
     def shopping_cart(self, request, pk):
         if request.method == 'POST':
-            return RecipeMixin.add(ShoppingCartSerializer, request.user, pk)
+            return RecipeService.add(ShoppingCartSerializer, request.user, pk)
         if request.method == 'DELETE':
-            return RecipeMixin.delete(ShoppingCart, request.user, pk)
+            return RecipeService.delete(ShoppingCart, request.user, pk)
