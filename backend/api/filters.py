@@ -1,5 +1,15 @@
 from django_filters.rest_framework import FilterSet, filters
-from recipes.models import Recipe
+from recipes.models import Recipe, Ingredient
+
+
+class IngredientFilter(FilterSet):
+    """Фильтр для views Ingredient.
+    Позволяет находить ингредиенты по первым буквам."""
+    name = filters.CharFilter(lookup_expr='startswith')
+
+    class Meta:
+        model = Ingredient
+        fields = ('name',)
 
 
 class RecipeFilter(FilterSet):
