@@ -9,7 +9,7 @@ app_name = 'api'
 router = routers.DefaultRouter()
 router.register('users', UserViewSet)
 router.register(r'users/(?P<user_id>\d+)/subscribe',
-                SubscribeViewSet, basename='subscriptions')
+                SubscribeViewSet, basename='subscribe')
 router.register('tags', TagViewSet)
 router.register('ingredients', IngredientViewSet)
 router.register('recipes', RecipeViewSet)

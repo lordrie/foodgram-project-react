@@ -3,6 +3,9 @@ from users.models import Subscription
 
 
 def validate_recipe_data(validated_data):
+    """Данные рецепта.
+    Проверяет наличие и корректность ингредиентов, тегов,
+    изображения и времени приготовления."""
     ingredients_data = validated_data.pop('recipes', [])
     if not ingredients_data:
         raise ValidationError(
@@ -32,6 +35,7 @@ def validate_recipe_data(validated_data):
 
 
 def validate_subscription(user, author):
+    """Проверяет возможность подписки пользователя на автора."""
     if user == author:
         raise ValidationError('Нельзя подписаться на себя')
     if Subscription.objects.filter(user=user, author=author).exists():
@@ -39,5 +43,6 @@ def validate_subscription(user, author):
 
 
 def validate_unsubscription(user, author):
+    """Проверяет возможность отписки пользователя от автора."""
     if not Subscription.objects.filter(user=user, author=author).exists():
         raise ValidationError('Вы не были подписаны на автора')

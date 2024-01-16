@@ -6,7 +6,7 @@ User = get_user_model()
 
 
 class Tag(models.Model):
-    """Модель тегов для рецепта"""
+    """Модель тегов"""
     name = models.CharField('Название', max_length=200, unique=True)
     color = models.CharField('Цвет', max_length=7, unique=True)
     slug = models.SlugField('Слаг', max_length=200, unique=True)

@@ -14,6 +14,7 @@ User = get_user_model()
 
 
 class UserSerializer(UserSerializer):
+    """Сериализатор для модели User, добавили поле is_subscribed."""
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -27,6 +28,7 @@ class UserSerializer(UserSerializer):
 
 
 class UserCreateSerializer(UserCreateSerializer):
+    """Сериализатор для создания новых пользователей."""
     class Meta:
         model = User
         fields = ('id', 'email', 'username', 'first_name',
@@ -34,6 +36,7 @@ class UserCreateSerializer(UserCreateSerializer):
 
 
 class UserСhangePasswordSerializer(SetPasswordSerializer):
+    """Сериализатор для изменения пароля пользователя."""
     current_password = serializers.CharField(required=True,
                                              label='Текущий пароль')
     new_password = serializers.CharField(required=True,
@@ -52,18 +55,21 @@ class UserСhangePasswordSerializer(SetPasswordSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели тега. Сериализует все поля тега."""
     class Meta:
         model = Tag
         fields = ('id', 'name', 'color', 'slug')
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор для ингредиента."""
     class Meta:
         model = Ingredient
         fields = ('id', 'name', 'measurement_unit')
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели связи рецепта и ингредиентов."""
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
@@ -74,8 +80,9 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
-class RecipeSerializer(serializers.ModelSerializer):
-    """GET"""
+class RecipeReadSerializer(serializers.ModelSerializer):
+    """"Сериализатор для модели рецепта. Проверяет,
+    добавлен ли рецепт в избранное и в список покупок."""
     tags = TagSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
     ingredients = RecipeIngredientSerializer(source='recipes',
@@ -91,6 +98,8 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'name', 'image', 'text', 'cooking_time')
 
     def get_is_model(self, model, obj):
+        """Проверяет, связан ли рецепт с моделью
+        для текущего пользователя."""
         request = self.context.get('request')
         if request.user.is_authenticated:
             return model.objects.filter(
@@ -98,13 +107,16 @@ class RecipeSerializer(serializers.ModelSerializer):
         return False
 
     def get_is_favorited(self, obj):
+        """Проверяет, добавлен ли рецепт в избранное."""
         return self.get_is_model(Favorite, obj)
 
     def get_is_in_shopping_cart(self, obj):
+        """Проверяет, добавлен ли рецепт в список покупок."""
         return self.get_is_model(ShoppingCart, obj)
 
 
 class CreateIngredientsSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания ингредиентов рецепта."""
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(), source='ingredient')
 
@@ -114,6 +126,7 @@ class CreateIngredientsSerializer(serializers.ModelSerializer):
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания рецепта."""
     ingredients = CreateIngredientsSerializer(source='recipes', many=True)
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all())
@@ -135,11 +148,12 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return recipe
 
     def to_representation(self, instance):
-        serializer = RecipeSerializer(instance, context=self.context)
+        serializer = RecipeReadSerializer(instance, context=self.context)
         return serializer.data
 
 
 class RecipeUpdateSerializer(serializers.ModelSerializer):
+    """Сериализатор для редактирования рецепта."""
     ingredients = CreateIngredientsSerializer(source='recipes', many=True)
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all())
@@ -170,11 +184,12 @@ class RecipeUpdateSerializer(serializers.ModelSerializer):
         return instance
 
     def to_representation(self, instance):
-        serializer = RecipeSerializer(instance, context=self.context)
+        serializer = RecipeReadSerializer(instance, context=self.context)
         return serializer.data
 
 
 class SmallRecipeSerializer(serializers.ModelSerializer):
+    """Сериализует основную информацию о рецепте."""
     image = Base64ImageField()
 
     class Meta:
@@ -184,6 +199,8 @@ class SmallRecipeSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
+    """Сериализатор для подписок. Проверяет подписку.
+    Сериализует данные рецепта."""
     email = serializers.ReadOnlyField(source='author.email')
     id = serializers.ReadOnlyField(source='author.id')
     username = serializers.ReadOnlyField(source='author.username')
@@ -199,12 +216,15 @@ class SubscriptionSerializer(serializers.ModelSerializer):
                   'is_subscribed', 'recipes', 'recipes_count')
 
     def get_is_subscribed(self, obj):
+        """Статус подписки на автора."""
         current_user = self.context.get('request').user
         is_user_subscribed = Subscription.objects.filter(
             user=current_user, author=obj.author).exists()
         return is_user_subscribed
 
     def get_recipes(self, obj):
+        """Возвращает список рецептов автора.
+        Количество рецептов может быть ограничено параметром 'recipes_limit'"""
         limit = self.context.get('request').query_params.get('recipes_limit')
         recipes = obj.author.recipes.all()
         if limit:
@@ -213,6 +233,9 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
 
 class BaseRecipeSerializer(serializers.ModelSerializer):
+    """Базовый сериализатор для моделей, связанных с рецептами
+    (Избранное и Список покупок).
+    Проверяет, добавлен ли рецепт пользователем."""
     def validate(self, data):
         user = data['user']
         recipe = data['recipe']

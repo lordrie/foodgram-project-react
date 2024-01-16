@@ -6,8 +6,13 @@ from rest_framework.exceptions import ValidationError
 
 
 class RecipeService:
+    """Сервис для работы с рецептами.
+    Добавляет и удаляет рецепт в
+    Избранное и/или Список покупок"""
     @staticmethod
     def add(instance, user, pk):
+        """Принимает экземпляр сериализатора, добавляет рецепт в Избранное
+        и Список покупок"""
         instance = instance(data={'user': user.id, 'recipe': pk})
         if not instance.is_valid():
             raise ValidationError(instance.errors)
@@ -16,6 +21,8 @@ class RecipeService:
 
     @staticmethod
     def delete(model, user, pk):
+        """Принимает модель, удаляет рецепт из Избранного
+        и Списка покупок"""
         recipe = get_object_or_404(Recipe, pk=pk)
         instance = model.objects.filter(user=user, recipe=recipe)
         if not instance.exists():

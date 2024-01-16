@@ -15,7 +15,7 @@ from .services import RecipeService
 from .paginations import CustomLimitPaginator
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (FavoriteSerializer, IngredientSerializer,
-                          RecipeCreateSerializer, RecipeSerializer,
+                          RecipeCreateSerializer, RecipeReadSerializer,
                           RecipeUpdateSerializer, ShoppingCartSerializer,
                           SubscriptionSerializer, TagSerializer,
                           UserCreateSerializer, UserSerializer,
@@ -26,6 +26,8 @@ User = get_user_model()
 
 
 class UserViewSet(UserViewSet):
+    """Представление для модели пользователя.
+    Для чтения, создания и изменения данных пользователя."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = CustomLimitPaginator
@@ -45,6 +47,8 @@ class UserViewSet(UserViewSet):
 
 
 class SubscriptionViewSet(generics.GenericAPIView, viewsets.ViewSet):
+    """Представление для подписок.
+    Для просмотра подписок пользователя."""
     permission_classes = (IsAuthenticated,)
     pagination_class = CustomLimitPaginator
 
@@ -58,10 +62,12 @@ class SubscriptionViewSet(generics.GenericAPIView, viewsets.ViewSet):
 
 
 class SubscribeViewSet(viewsets.ViewSet):
+    """Представление для создания и удаления подписок."""
     permission_classes = (IsAuthenticated,)
     http_method_names = ['get', 'post', 'delete', 'head']
 
     def create(self, request, user_id=None):
+        """Создание подписки."""
         user = request.user
         author = get_object_or_404(User, id=user_id)
         validate_subscription(user, author)
@@ -81,6 +87,7 @@ class SubscribeViewSet(viewsets.ViewSet):
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    """Представление для модели тега."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -88,6 +95,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    """Представление для модели ингредиента."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
@@ -95,8 +103,11 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet, RecipeService):
+    """Представление для модели рецепта.
+    Для просматра, создания, обновления и удаления рецепта.
+    Так же добавляет рецепт в избранное и список покупок"""
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+    serializer_class = RecipeReadSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsAuthorOrReadOnly)
     pagination_class = CustomLimitPaginator
@@ -108,10 +119,11 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeService):
             return RecipeCreateSerializer
         elif self.action == 'partial_update':
             return RecipeUpdateSerializer
-        return RecipeSerializer
+        return RecipeReadSerializer
 
     @action(detail=True, methods=('POST', 'DELETE'))
     def favorite(self, request, pk):
+        """Метод для добавления и удаления рецептов из избранного."""
         if request.method == 'POST':
             return RecipeService.add(FavoriteSerializer, request.user, pk)
         if request.method == 'DELETE':
@@ -119,6 +131,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeService):
 
     @action(detail=True, methods=('POST', 'DELETE'))
     def shopping_cart(self, request, pk):
+        """Метод для добавления и удаления рецептов из списка покупок."""
         if request.method == 'POST':
             return RecipeService.add(ShoppingCartSerializer, request.user, pk)
         if request.method == 'DELETE':

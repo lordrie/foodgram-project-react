@@ -3,8 +3,8 @@ from recipes.models import Recipe, Ingredient
 
 
 class IngredientFilter(FilterSet):
-    """Фильтр для views Ingredient.
-    Позволяет находить ингредиенты по первым буквам."""
+    """Фильтр для игредиентов.
+    Фильтрует ингредиенты по первым буквам."""
     name = filters.CharFilter(lookup_expr='startswith')
 
     class Meta:
@@ -13,6 +13,9 @@ class IngredientFilter(FilterSet):
 
 
 class RecipeFilter(FilterSet):
+    """Фильтр для рецепта.
+    Фильтрует рецепты по тегам, автору,
+    наличию в избранном и в списке покупок."""
     tags = filters.AllValuesMultipleFilter(field_name='tags__slug')
     is_favorited = filters.BooleanFilter(method='get_favorite')
     is_in_shopping_cart = filters.BooleanFilter(method='get_shopping_cart')
