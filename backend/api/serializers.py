@@ -8,12 +8,12 @@ from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
 from rest_framework import serializers
 from users.models import Subscription
 
-from .validators import validate_recipe_data
+from .validators import validate_recipe
 
 User = get_user_model()
 
 
-class UserSerializer(UserSerializer):
+class UserReadSerializer(UserSerializer):
     """Сериализатор для модели User, добавили поле is_subscribed."""
     is_subscribed = serializers.SerializerMethodField()
 
@@ -55,7 +55,7 @@ class UserСhangePasswordSerializer(SetPasswordSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели тега. Сериализует все поля тега."""
+    """Сериализатор для модели тега."""
     class Meta:
         model = Tag
         fields = ('id', 'name', 'color', 'slug')
@@ -84,7 +84,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     """"Сериализатор для модели рецепта. Проверяет,
     добавлен ли рецепт в избранное и в список покупок."""
     tags = TagSerializer(many=True, read_only=True)
-    author = UserSerializer(read_only=True)
+    author = UserReadSerializer(read_only=True)
     ingredients = RecipeIngredientSerializer(source='recipes',
                                              many=True, read_only=True)
     is_favorited = serializers.SerializerMethodField()
@@ -138,7 +138,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                   'name', 'text', 'cooking_time')
 
     def create(self, validated_data):
-        ingredients_data, tags_data = validate_recipe_data(validated_data)
+        ingredients_data, tags_data = validate_recipe(validated_data)
         validated_data['author'] = self.context['request'].user
         recipe = Recipe.objects.create(**validated_data)
         for ingredient_data in ingredients_data:
@@ -165,7 +165,7 @@ class RecipeUpdateSerializer(serializers.ModelSerializer):
                   'name', 'text', 'cooking_time')
 
     def update(self, instance, validated_data):
-        ingredients_data, tags_data = validate_recipe_data(validated_data)
+        ingredients_data, tags_data = validate_recipe(validated_data)
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
         instance.cooking_time = validated_data.get(
@@ -225,11 +225,14 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     def get_recipes(self, obj):
         """Возвращает список рецептов автора.
         Количество рецептов может быть ограничено параметром 'recipes_limit'"""
-        limit = self.context.get('request').query_params.get('recipes_limit')
+        request = self.context.get('request')
+        limit = request.GET.get('recipes_limit')
         recipes = obj.author.recipes.all()
         if limit:
             recipes = recipes[:int(limit)]
-        return SmallRecipeSerializer(recipes, many=True).data
+        serializer = SmallRecipeSerializer(
+            recipes, many=True, read_only=True)
+        return serializer.data
 
 
 class BaseRecipeSerializer(serializers.ModelSerializer):
