@@ -9,7 +9,7 @@ https://foodxgram.bounceme.net/admin/
 ```
 - username: lord
 - email: lord@gmail.com
-- password: lord
+- password: lordlord
 ```
 
 # Foodgram - социальная сеть для размещение фотографий домашних животных.
