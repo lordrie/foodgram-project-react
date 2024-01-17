@@ -1,10 +1,15 @@
 ## Проект доступен по ссылкам:
 
 ```
-- https://foodxgram.bounceme.net
-- https://foodxgram.bounceme.net/admin/
+https://foodxgram.bounceme.net
+```
+```
+https://foodxgram.bounceme.net/admin/
+```
+```
 - username: lord
-- password: lord
+- email: lord@gmail.com
+- password: lordlord
 ```
 
 # Foodgram - социальная сеть для размещение фотографий домашних животных.
