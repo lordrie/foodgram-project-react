@@ -125,7 +125,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeService):
 
     @action(detail=True, methods=('POST', 'DELETE'))
     def favorite(self, request, pk):
-        """обавление и удаление рецептов из избранного."""
+        """Добавление и удаление рецептов из избранного."""
         return RecipeService.add_delete(FavoriteSerializer, request, pk)
 
     @action(detail=True, methods=('POST', 'DELETE'))
