@@ -27,7 +27,8 @@ class Subscription(models.Model):
                              related_name='follower',
                              verbose_name='Подписчик')
     author = models.ForeignKey(User, on_delete=models.CASCADE,
-                               related_name='following')
+                               related_name='following',
+                               verbose_name='Автор')
     created = models.DateTimeField('Дата создания', auto_now_add=True)
 
     class Meta:
