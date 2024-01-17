@@ -68,15 +68,14 @@ class SubscribeViewSet(viewsets.ViewSet):
 
     def create(self, request, user_id=None):
         """Создание подписки."""
+        user = request.user
         author = get_object_or_404(User, id=user_id)
-        validate_subscription(request.user, author)
-        queryset = Subscription.objects.create(
-            author=author, user=request.user)
-        context = {'request': request}
-        serializer = SubscriptionSerializer(queryset, context=context)
+        validate_subscription(user, author)
+        queryset = Subscription.objects.create(author=author, user=user)
+        serializer = SubscriptionSerializer(
+            queryset, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(methods=('DELETE',), detail=True)
     def delete(self, request, user_id):
         """Удаление подписки."""
         get_object_or_404(User, id=user_id)
