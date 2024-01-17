@@ -3,12 +3,12 @@
 ```
 - https://foodxgram.bounceme.net
 ```
+```
 - https://foodxgram.bounceme.net/admin/
-- ```
+```
+```
 - username: lord
-- ```
 - email: lord@gmail.com
-- ```
 - password: lord
 ```
 
