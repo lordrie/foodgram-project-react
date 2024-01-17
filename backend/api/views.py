@@ -11,7 +11,6 @@ from rest_framework.response import Response
 from users.models import Subscription
 
 from .filters import IngredientFilter, RecipeFilter
-from .services import RecipeService
 from .paginations import CustomLimitPaginator
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (FavoriteSerializer, IngredientSerializer,
@@ -20,6 +19,7 @@ from .serializers import (FavoriteSerializer, IngredientSerializer,
                           SubscriptionSerializer, TagSerializer,
                           UserCreateSerializer, UserSerializer,
                           UserСhangePasswordSerializer)
+from .services import RecipeService
 from .validators import validate_subscription, validate_unsubscription
 
 User = get_user_model()

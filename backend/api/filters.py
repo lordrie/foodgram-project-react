@@ -1,11 +1,11 @@
 from django_filters.rest_framework import FilterSet, filters
-from recipes.models import Recipe, Ingredient
+from recipes.models import Ingredient, Recipe
 
 
 class IngredientFilter(FilterSet):
     """Фильтр для игредиентов.
-    Фильтрует ингредиенты по первым буквам."""
-    name = filters.CharFilter(lookup_expr='startswith')
+    Фильтрует ингредиенты в произвольном месте."""
+    name = filters.CharFilter(lookup_expr='icontains')
 
     class Meta:
         model = Ingredient
