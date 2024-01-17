@@ -19,7 +19,6 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
     """
     list_display = ('recipe', 'ingredient', 'amount')
     search_fields = ('recipe__name', 'ingredient__name')
-    list_filter = ('recipe__author',)
 
 
 class RecipeAdmin(admin.ModelAdmin):

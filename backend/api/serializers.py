@@ -191,7 +191,7 @@ class RecipeUpdateSerializer(serializers.ModelSerializer):
         return serializer.data
 
 
-class SmallRecipeSerializer(serializers.ModelSerializer):
+class BaseRecipeSerializer(serializers.ModelSerializer):
     """Сериализует основную информацию о рецепте."""
     image = Base64ImageField()
 
@@ -199,6 +199,12 @@ class SmallRecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
         read_only_fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class AuthorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'first_name', 'last_name')
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
@@ -233,15 +239,16 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         recipes = obj.author.recipes.all()
         if limit:
             recipes = recipes[:int(limit)]
-        serializer = SmallRecipeSerializer(
+        serializer = BaseRecipeSerializer(
             recipes, many=True, read_only=True)
         return serializer.data
 
 
-class BaseRecipeSerializer(serializers.ModelSerializer):
-    """Базовый сериализатор для моделей, связанных с рецептами
+class RecipeRelatedModelSerializer(serializers.ModelSerializer):
+    """Cериализатор для моделей, связанных с рецептами
     (Избранное и Список покупок).
     Проверяет, добавлен ли рецепт пользователем."""
+
     def validate(self, data):
         user = data['user']
         recipe = data['recipe']
@@ -253,18 +260,18 @@ class BaseRecipeSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         request = self.context.get('request')
-        return SmallRecipeSerializer(
+        return BaseRecipeSerializer(
             instance.recipe, context={'request': request}).data
 
 
-class FavoriteSerializer(BaseRecipeSerializer):
+class FavoriteSerializer(RecipeRelatedModelSerializer):
     """Сериализатор для работы с избранными рецептами."""
     class Meta:
         model = Favorite
         fields = ('user', 'recipe')
 
 
-class ShoppingCartSerializer(BaseRecipeSerializer):
+class ShoppingCartSerializer(RecipeRelatedModelSerializer):
     """Сериализатор для работы со списком покупок."""
     class Meta:
         model = ShoppingCart

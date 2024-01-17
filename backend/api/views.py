@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from recipes.models import Ingredient, Recipe, Tag
 from rest_framework import status, viewsets
@@ -32,7 +31,7 @@ class UserViewSet(UserViewSet):
     serializer_class = UserReadSerializer
     pagination_class = CustomLimitPaginator
 
-    @action(methods=['GET'], detail=False,
+    @action(detail=False, methods=('GET',),
             permission_classes=(IsAuthenticated,))
     def me(self, request):
         self.get_object = self.get_instance
@@ -54,10 +53,10 @@ class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
 
     def list(self, request):
         user = request.user
-        queryset = user.follower.select_related('author').all()
-        pages = self.paginate_queryset(queryset)
+        queryset = user.follower.all()
+        page = self.paginate_queryset(queryset)
         serializer = SubscriptionSerializer(
-            pages, many=True, context={'request': request})
+            page, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
 
 
@@ -110,7 +109,6 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeService):
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsAuthorOrReadOnly)
     pagination_class = CustomLimitPaginator
-    filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
