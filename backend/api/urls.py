@@ -2,7 +2,8 @@ from django.urls import include, path
 from rest_framework import routers
 
 from .views import (IngredientViewSet, RecipeViewSet, SubscribeViewSet,
-                    SubscriptionViewSet, TagViewSet, UserViewSet)
+                    SubscriptionViewSet, TagViewSet, UserViewSet,
+                    ShoppingListDownloadView)
 
 app_name = 'api'
 
@@ -16,6 +17,9 @@ router.register('recipes', RecipeViewSet)
 
 
 urlpatterns = [
+    path('recipes/download_shopping_cart/',
+         ShoppingListDownloadView.as_view({'get': 'get'}),
+         name='download_shopping_cart'),
     path('users/subscriptions/',
          SubscriptionViewSet.as_view({'get': 'list'}), name='subscriptions'),
     path('', include(router.urls)),

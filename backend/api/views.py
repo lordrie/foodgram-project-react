@@ -1,9 +1,10 @@
 from django.contrib.auth import get_user_model
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
-from rest_framework import generics, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
@@ -46,7 +47,7 @@ class UserViewSet(UserViewSet):
         return UserSerializer
 
 
-class SubscriptionViewSet(generics.GenericAPIView, viewsets.ViewSet):
+class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
     """Представление для подписок.
     Для просмотра подписок пользователя."""
     permission_classes = (IsAuthenticated,)
@@ -136,3 +137,33 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeService):
             return RecipeService.add(ShoppingCartSerializer, request.user, pk)
         if request.method == 'DELETE':
             return RecipeService.delete(ShoppingCart, request.user, pk)
+
+
+class ShoppingListDownloadView(viewsets.ReadOnlyModelViewSet):
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return HttpResponse('Unauthorized', status=401)
+
+        shopping_list = ShoppingCart.objects.filter(user=request.user)
+        ingredients = {}
+        for item in shopping_list:
+            for recipe_ingredient in item.recipe.recipes.all():
+                name = recipe_ingredient.ingredient.name
+                amount = recipe_ingredient.amount
+                unit = recipe_ingredient.ingredient.measurement_unit
+                if name in ingredients:
+                    ingredients[name]['amount'] += amount
+                else:
+                    ingredients[name] = {'amount': amount, 'unit': unit}
+
+        content_lines = []
+        for name, info in ingredients.items():
+            line = f'{name} — {info["amount"]} {info["unit"]}'
+            content_lines.append(line)
+        content = "\n".join(content_lines)
+
+        response = HttpResponse(content, content_type='text/plain')
+        response['Content-Disposition'] = 'attachment;'
+        'filename="shopping_list.txt"'
+        return response
