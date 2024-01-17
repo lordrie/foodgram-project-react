@@ -1,10 +1,10 @@
 ## Проект доступен по ссылкам:
 
 ```
-- https://foodxgram.bounceme.net
+https://foodxgram.bounceme.net
 ```
 ```
-- https://foodxgram.bounceme.net/admin/
+https://foodxgram.bounceme.net/admin/
 ```
 ```
 - username: lord
