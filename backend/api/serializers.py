@@ -14,7 +14,7 @@ User = get_user_model()
 
 
 class UserReadSerializer(UserSerializer):
-    """Сериализатор для модели User, добавили поле is_subscribed."""
+    """Базовый сериализатор для кастомной модели User"""
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -23,10 +23,11 @@ class UserReadSerializer(UserSerializer):
                   'first_name', 'last_name', 'is_subscribed')
 
     def get_is_subscribed(self, obj):
-        request = self.context.get('request')
-        if request.user.is_authenticated:
+        """Проверяет подписку"""
+        current_user = self.context.get('request').user
+        if current_user.is_authenticated:
             return Subscription.objects.filter(
-                user=request.user, author=obj).exists()
+                user=current_user, author=obj).exists()
         return False
 
 
@@ -219,7 +220,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
                   'is_subscribed', 'recipes', 'recipes_count')
 
     def get_is_subscribed(self, obj):
-        """Статус подписки на автора."""
+        """Проверяет подписку"""
         current_user = self.context.get('request').user
         is_user_subscribed = Subscription.objects.filter(
             user=current_user, author=obj.author).exists()

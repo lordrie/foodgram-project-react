@@ -34,10 +34,13 @@ class UserViewSet(UserViewSet):
     @action(detail=False, methods=('GET',),
             permission_classes=(IsAuthenticated,))
     def me(self, request):
+        """Возвращает данные текущего пользователя."""
         self.get_object = self.get_instance
         return self.retrieve(request)
 
     def get_serializer_class(self):
+        """Возвращает класс сериализатора в зависимости от действия.
+        """
         if self.action == 'create':
             return UserCreateSerializer
         elif self.action == 'set_password':
@@ -47,7 +50,7 @@ class UserViewSet(UserViewSet):
 
 class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
     """Представление для подписок.
-    Для просмотра подписок пользователя."""
+    Возвращает список подписок текущего пользователя."""
     permission_classes = (IsAuthenticated,)
     pagination_class = CustomLimitPaginator
 
@@ -112,6 +115,8 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeService):
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
+        """Возвращает класс сериализатора в зависимости от действия.
+        """
         if self.action == 'create':
             return RecipeCreateSerializer
         elif self.action == 'partial_update':
@@ -120,12 +125,12 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeService):
 
     @action(detail=True, methods=('POST', 'DELETE'))
     def favorite(self, request, pk):
-        """Метод для добавления и удаления рецептов из избранного."""
+        """обавление и удаление рецептов из избранного."""
         return RecipeService.add_delete(FavoriteSerializer, request, pk)
 
     @action(detail=True, methods=('POST', 'DELETE'))
     def shopping_cart(self, request, pk):
-        """Метод для добавления и удаления рецептов из списка покупок."""
+        """Добавление и удаление рецептов из списка покупок."""
         return RecipeService.add_delete(ShoppingCartSerializer, request, pk)
 
 
