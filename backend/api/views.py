@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
@@ -20,7 +19,7 @@ from .serializers import (FavoriteSerializer, IngredientSerializer,
                           SubscriptionSerializer, TagSerializer,
                           UserCreateSerializer, UserSerializer,
                           UserСhangePasswordSerializer)
-from .services import RecipeService
+from .services import RecipeService, ShoppingListService
 from .validators import validate_subscription, validate_unsubscription
 
 User = get_user_model()
@@ -140,30 +139,13 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeService):
 
 
 class ShoppingListDownloadView(viewsets.ReadOnlyModelViewSet):
+    """Представление для загрузки списка покупок."""
 
-    def get(self, request, *args, **kwargs):
+    def download(self, request, *args, **kwargs):
+
         if not request.user.is_authenticated:
-            return HttpResponse('Unauthorized', status=401)
+            return Response('Ошибка аутентификации',
+                            status.HTTP_401_UNAUTHORIZED)
 
-        shopping_list = ShoppingCart.objects.filter(user=request.user)
-        ingredients = {}
-        for item in shopping_list:
-            for recipe_ingredient in item.recipe.recipes.all():
-                name = recipe_ingredient.ingredient.name
-                amount = recipe_ingredient.amount
-                unit = recipe_ingredient.ingredient.measurement_unit
-                if name in ingredients:
-                    ingredients[name]['amount'] += amount
-                else:
-                    ingredients[name] = {'amount': amount, 'unit': unit}
-
-        content_lines = []
-        for name, info in ingredients.items():
-            line = f'{name} — {info["amount"]} {info["unit"]}'
-            content_lines.append(line)
-        content = "\n".join(content_lines)
-
-        response = HttpResponse(content, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment;'
-        'filename="shopping_list.txt"'
-        return response
+        service = ShoppingListService(request.user)
+        return service.get_shopping_list()

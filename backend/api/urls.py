@@ -18,7 +18,7 @@ router.register('recipes', RecipeViewSet)
 
 urlpatterns = [
     path('recipes/download_shopping_cart/',
-         ShoppingListDownloadView.as_view({'get': 'get'}),
+         ShoppingListDownloadView.as_view({'get': 'download'}),
          name='download_shopping_cart'),
     path('users/subscriptions/',
          SubscriptionViewSet.as_view({'get': 'list'}), name='subscriptions'),
