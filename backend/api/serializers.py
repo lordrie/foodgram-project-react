@@ -201,12 +201,6 @@ class BaseRecipeSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'name', 'image', 'cooking_time')
 
 
-class AuthorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name')
-
-
 class SubscriptionSerializer(serializers.ModelSerializer):
     """Сериализатор для подписок. Проверяет подписку.
     Сериализует данные рецепта."""
