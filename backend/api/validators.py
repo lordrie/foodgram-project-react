@@ -3,6 +3,10 @@ from rest_framework.exceptions import ValidationError
 from users.models import Subscription
 
 
+MIN_VALUE_VALIDATOR = 1
+MAX_VALUE_VALIDATOR = 32000
+
+
 def validate_recipe(validated_data):
     """Данные рецепта.
     Проверяет наличие и корректность ингредиентов, тегов,

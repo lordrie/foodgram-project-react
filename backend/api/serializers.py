@@ -3,12 +3,14 @@ from django.shortcuts import get_object_or_404
 from djoser.serializers import (SetPasswordSerializer, UserCreateSerializer,
                                 UserSerializer)
 from drf_extra_fields.fields import Base64ImageField
-from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag)
 from rest_framework import serializers
+
+from .validators import (validate_recipe,
+                         MIN_VALUE_VALIDATOR, MAX_VALUE_VALIDATOR)
+from recipes.models import (Favorite, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
 from users.models import Subscription
 
-from .validators import validate_recipe
 
 User = get_user_model()
 
@@ -24,10 +26,9 @@ class UserReadSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         """Проверяет подписку"""
-        current_user = self.context.get('request').user
+        current_user = self.context['request'].user
         if current_user.is_authenticated:
-            return Subscription.objects.filter(
-                user=current_user, author=obj).exists()
+            return obj.following.filter(user=current_user).exists()
         return False
 
 
@@ -104,7 +105,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     def get_is_model(self, model, obj):
         """Проверяет, связан ли рецепт с моделью
         для текущего пользователя."""
-        request = self.context.get('request')
+        request = self.context['request']
         if request.user.is_authenticated:
             return model.objects.filter(
                 user=request.user, recipe=obj).exists()
@@ -123,18 +124,22 @@ class CreateIngredientsSerializer(serializers.ModelSerializer):
     """Сериализатор для создания ингредиентов рецепта."""
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(), source='ingredient')
+    amount = serializers.IntegerField(min_value=MIN_VALUE_VALIDATOR,
+                                      max_value=MAX_VALUE_VALIDATOR)
 
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'amount')
 
 
-class RecipeCreateSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания рецепта."""
+class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания и редактирования рецепта."""
     ingredients = CreateIngredientsSerializer(source='recipes', many=True)
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all())
     image = Base64ImageField(required=True)
+    cooking_time = serializers.IntegerField(min_value=MIN_VALUE_VALIDATOR,
+                                            max_value=MAX_VALUE_VALIDATOR)
 
     class Meta:
         model = Recipe
@@ -150,23 +155,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         for tag_data in tags_data:
             recipe.tags.add(tag_data)
         return recipe
-
-    def to_representation(self, instance):
-        serializer = RecipeReadSerializer(instance, context=self.context)
-        return serializer.data
-
-
-class RecipeUpdateSerializer(serializers.ModelSerializer):
-    """Сериализатор для редактирования рецепта."""
-    ingredients = CreateIngredientsSerializer(source='recipes', many=True)
-    tags = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=Tag.objects.all())
-    image = Base64ImageField(required=True)
-
-    class Meta:
-        model = Recipe
-        fields = ('ingredients', 'tags', 'image',
-                  'name', 'text', 'cooking_time')
 
     def update(self, instance, validated_data):
         ingredients_data, tags_data = validate_recipe(validated_data)
@@ -221,15 +209,15 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         """Проверяет подписку"""
-        current_user = self.context.get('request').user
-        is_user_subscribed = Subscription.objects.filter(
-            user=current_user, author=obj.author).exists()
+        current_user = self.context['request'].user
+        is_user_subscribed = obj.author.follower.filter(
+            user=current_user).exists()
         return is_user_subscribed
 
     def get_recipes(self, obj):
         """Возвращает список рецептов автора.
         Количество рецептов может быть ограничено параметром 'recipes_limit'"""
-        request = self.context.get('request')
+        request = self.context['request']
         limit = request.GET.get('recipes_limit')
         recipes = obj.author.recipes.all()
         if limit:

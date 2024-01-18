@@ -10,14 +10,11 @@ from rest_framework.response import Response
 from .filters import IngredientFilter, RecipeFilter
 from .paginations import CustomLimitPaginator
 from .permissions import IsAuthorOrReadOnly
-from .serializers import (
-    FavoriteSerializer, IngredientSerializer,
-    RecipeCreateSerializer, RecipeReadSerializer,
-    RecipeUpdateSerializer, ShoppingCartSerializer,
-    SubscriptionSerializer, TagSerializer,
-    UserCreateSerializer, UserReadSerializer,
-    UserСhangePasswordSerializer
-)
+from .serializers import (FavoriteSerializer, IngredientSerializer,
+                          RecipeCreateUpdateSerializer, RecipeReadSerializer,
+                          ShoppingCartSerializer, SubscriptionSerializer,
+                          TagSerializer, UserCreateSerializer,
+                          UserReadSerializer, UserСhangePasswordSerializer)
 from .services import RecipeService, ShoppingListService
 from .validators import validate_subscription, validate_unsubscription
 from recipes.models import Ingredient, Recipe, Tag
@@ -120,10 +117,8 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeService):
     def get_serializer_class(self):
         """Возвращает класс сериализатора в зависимости от действия.
         """
-        if self.action == 'create':
-            return RecipeCreateSerializer
-        if self.action == 'partial_update':
-            return RecipeUpdateSerializer
+        if self.action in ('create', 'partial_update'):
+            return RecipeCreateUpdateSerializer
         return RecipeReadSerializer
 
     @action(detail=True, methods=('POST', 'DELETE'))

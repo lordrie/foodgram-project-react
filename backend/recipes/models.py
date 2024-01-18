@@ -2,10 +2,10 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-User = get_user_model()
+from api.validators import MIN_VALUE_VALIDATOR, MAX_VALUE_VALIDATOR
 
-MIN_VALUE_VALIDATOR = 1
-MAX_VALUE_VALIDATOR = 32000
+
+User = get_user_model()
 
 
 class Tag(models.Model):
