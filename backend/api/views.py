@@ -1,25 +1,28 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
-from recipes.models import Ingredient, Recipe, Tag
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from users.models import Subscription
 
 from .filters import IngredientFilter, RecipeFilter
 from .paginations import CustomLimitPaginator
 from .permissions import IsAuthorOrReadOnly
-from .serializers import (FavoriteSerializer, IngredientSerializer,
-                          RecipeCreateSerializer, RecipeReadSerializer,
-                          RecipeUpdateSerializer, ShoppingCartSerializer,
-                          SubscriptionSerializer, TagSerializer,
-                          UserCreateSerializer, UserReadSerializer,
-                          UserСhangePasswordSerializer)
+from .serializers import (
+    FavoriteSerializer, IngredientSerializer,
+    RecipeCreateSerializer, RecipeReadSerializer,
+    RecipeUpdateSerializer, ShoppingCartSerializer,
+    SubscriptionSerializer, TagSerializer,
+    UserCreateSerializer, UserReadSerializer,
+    UserСhangePasswordSerializer
+)
 from .services import RecipeService, ShoppingListService
 from .validators import validate_subscription, validate_unsubscription
+from recipes.models import Ingredient, Recipe, Tag
+from users.models import Subscription
+
 
 User = get_user_model()
 
@@ -43,7 +46,7 @@ class UserViewSet(UserViewSet):
         """
         if self.action == 'create':
             return UserCreateSerializer
-        elif self.action == 'set_password':
+        if self.action == 'set_password':
             return UserСhangePasswordSerializer
         return UserReadSerializer
 
@@ -119,7 +122,7 @@ class RecipeViewSet(viewsets.ModelViewSet, RecipeService):
         """
         if self.action == 'create':
             return RecipeCreateSerializer
-        elif self.action == 'partial_update':
+        if self.action == 'partial_update':
             return RecipeUpdateSerializer
         return RecipeReadSerializer
 
