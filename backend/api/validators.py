@@ -47,5 +47,5 @@ def validate_subscription(user, author):
 
 def validate_unsubscription(user, author):
     """Проверяет возможность отписки пользователя от автора."""
-    if user.follower.filter(author=author).exists():
+    if not user.follower.filter(author=author).exists():
         raise ValidationError('Вы не были подписаны на автора')
