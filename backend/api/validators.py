@@ -1,7 +1,5 @@
 from rest_framework.exceptions import ValidationError
 
-from users.models import Subscription
-
 
 MIN_VALUE_VALIDATOR = 1
 MAX_VALUE_VALIDATOR = 32000
@@ -43,11 +41,11 @@ def validate_subscription(user, author):
     """Проверяет возможность подписки пользователя на автора."""
     if user == author:
         raise ValidationError('Нельзя подписаться на себя')
-    if Subscription.objects.filter(user=user, author=author).exists():
+    if user.follower.filter(author=author).exists():
         raise ValidationError('Нельзя подписаться дважды')
 
 
 def validate_unsubscription(user, author):
     """Проверяет возможность отписки пользователя от автора."""
-    if not Subscription.objects.filter(user=user, author=author).exists():
+    if user.follower.filter(author=author).exists():
         raise ValidationError('Вы не были подписаны на автора')
