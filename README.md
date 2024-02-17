@@ -1,21 +1,15 @@
-## Проект доступен по ссылкам:
-
-```
-https://foodxgram.bounceme.net
-```
-```
-https://foodxgram.bounceme.net/admin/
-```
-```
-username: lord
-email: lord@gmail.com
-password: lordlord
-```
-
-# Foodgram - социальная сеть для размещение фотографий домашних животных.
+# Foodgram: Сайт с рецептами и списком покупок"
 
 ## Описание проекта
-Foodgram - сайт, на котором пользователи публикуют свои рецепты, добавляют другие рецепты в избранное и подписываются на публикации других авторов. Пользователям сайта также доступен сервис «Список покупок». Он позволяет создавать список продуктов, которые нужно купить для приготовления выбранных блюд.
+
+"Foodgram" - это веб-приложение, которое позволяет пользователям:
+
+-Публиковать рецепты с фото, видео, описанием и списком ингредиентов.
+-Просматривать рецепты других пользователей, сортировать их по дате, тегам, категории.
+-Добавлять рецепты в избранное и создавать список покупок.
+-Подписываться на других пользователей и следить за их обновлениями.
+-Оставлять комментарии к рецептам.
+-Редактировать свои рецепты и удалять их.
 
 ## Технологии
 - Python 3.9
@@ -41,7 +35,7 @@ git clone git@github.com:lordrie/foodgram-project-react.git
 cd foodgram-project-react/infra
 ```
 
-Создать файл .evn для хранения ключей:
+Создать файл .evn для хранения ключей в папке:
 
 ```
 SECRET_KEY=''
@@ -57,27 +51,22 @@ DB_PORT=
 Запустить docker-compose.production:
 
 ```
-docker compose -f docker-compose.production.yml up
+docker compose up --build 
 ```
 
-Выполнить миграции, сбор статики:
+Выполнить миграции, сбор статики, создание суперпользователя:
 
 ```
-docker compose -f docker-compose.production.yml exec backend python manage.py migrate
-docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
-docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /static/static/
-
-```
-
-Создать суперпользователя:
-
-```
-docker compose -f docker-compose.production.yml exec backend python manage.py createsuperuser
+docker compose exec backend python manage.py migrate
+docker compose exec backend python manage.py collectstatic
+docker compose exec backend cp -r /app/collected_static/. /backend_static/static/
+docker compose exec backend python manage.py createsuperuser
 ```
 
 После запуска проекта документация доступна по адресу:
 
 ```
+http://localhost/
 http://localhost/api/docs/
 ```
 ![1d004fa6-1350-404b-a4fc-8758f9e301d0](https://github.com/lordrie/foodgram-project-react/assets/131662299/ee358f66-ec71-47a9-83ea-d10becf30b8c)
