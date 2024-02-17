@@ -38,13 +38,13 @@ cd foodgram-project-react/infra
 
 ```
 SECRET_KEY=''
-DEBUG = 
-ALLOWED_HOSTS=
-POSTGRES_USER=
-POSTGRES_PASSWORD=
-POSTGRES_DB=
-DB_HOST=
-DB_PORT=
+DEBUG=True
+ALLOWED_HOSTS=localhost
+POSTGRES_USER=django
+POSTGRES_PASSWORD=password
+POSTGRES_DB=django
+DB_HOST=db
+DB_PORT=5432
 ```
 
 Запустить docker-compose.production:
